@@ -1,0 +1,909 @@
+{
+	"info": {
+		"_postman_id": "5d7a2b88-fad4-4221-90b1-e66fe210b432",
+		"name": "rails-api-tdd",
+		"description": "This application is a simple link log for blog posts related to web development.\n\nIt allows users to manage owned articles, commenting all articles and logging in via OAuth or standard user/password flow.\n\n\nThe complete implementation Guide is in: https://www.udemy.com/ruby-on-rails-api-the-complete-guide/\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9698863"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "No Auth Data",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "### No auth data\n\n#### Expected response:\n\n**401** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"401\",\n            \"source\": {\n                \"pointer\": \"/data/attributes/password\"\n            },\n            \"title\": \"Invalid login or password\",\n            \"detail\": \"You must provide valid credentials in order to exchange them for token.\"\n        }\n    ]\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid OAuth Code",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"code\": \"invalid\" }"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "### Invalid Oauth Code\n\n#### Expected response:\n\n**401** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"401\",\n            \"source\": {\n                \"pointer\": \"/code\"\n            },\n            \"title\": \"Authentication code is invalid\",\n            \"detail\": \"You must provide valid code in order to exchange it for token.\"\n        }\n    ]\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Password",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": "Optional"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"data\": { \n\t\t\"attributes\": {\n\t\t\t\"login\": \"jsmith\",\n\t\t\t\"password\": \"invalid\"\n\t\t}\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "### Invalid Oauth Code\n\n#### Expected response:\n\n**401** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"401\",\n            \"source\": {\n                \"pointer\": \"/data/attributes/password\"\n            },\n            \"title\": \"Invalid login or password\",\n            \"detail\": \"You must provide valid credentials in order to exchange them for token.\"\n        }\n    ]\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Success (Login & Password Flow)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"access_token\", JSON.parse(responseBody).data.attributes.token);",
+									"pm.environment.set(\"refresh_token\", JSON.parse(responseBody).data.attributes.refresh_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"data\": { \n\t\t\"attributes\": {\n\t\t\t\"login\": \"jsmith\",\n\t\t\t\"password\": \"secret\"\n\t\t}\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "### Successful request\n\n#### Expected response:\n\n**201** HTTP status code with access token\n\n```json\n{\n    \"data\": {\n        \"id\": \"1\",\n        \"type\": \"access-tokens\",\n        \"attributes\": {\n            \"token\": \"0725fbefab8abb0c3b67\"\n        }\n    }\n}\n```"
+					},
+					"response": []
+				}
+			],
+			"description": "## Logging in user\n\n**Required Attributes:**\n\n- login\n- password\n\nAs a response we get the authorization token you should pass in the Authorization header of the authorized requests.\n\n`Authorization=\"Bearer {{ACCESS_TOKEN}}\"`",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Articles",
+			"item": [
+				{
+					"name": "Create Article",
+					"item": [
+						{
+							"name": "Unauthorized",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "invalid",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/articles",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles"
+									]
+								},
+								"description": "### No authorization provided\n\n#### Expected response:\n\n**403** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"403\",\n            \"source\": {\n                \"pointer\": \"/headers/authorization\"\n            },\n            \"title\": \"Not authorized\",\n            \"detail\": \"You have no right to access this resource.\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Invalid",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"content\": \"Test content\",\n\t\t\t\"title\": \"\",\n\t\t\t\"slug\": \"\"\n\t\t}\n\t}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/articles",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles"
+									]
+								},
+								"description": "### Invalid Request\n\n#### Expected response:\n\n**422** HTTP status code with validation error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/title\"\n            },\n            \"detail\": \"can't be blank\"\n        },\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/slug\"\n            },\n            \"detail\": \"can't be blank\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Success",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"unique_article_id\", 1+Number(pm.environment.get(\"unique_article_id\")));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"content\": \"Test article content {{unique_article_id}}\",\n\t\t\t\"title\": \"Test article title {{unique_article_id}}\",\n\t\t\t\"slug\": \"test-article-slug-{{unique_article_id}}\"\n\t\t}\n\t}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/articles",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles"
+									]
+								},
+								"description": "### Success\n\n#### Expected response:\n\n**201** HTTP status code with article details.\n\n```json\n{\n    \"data\": {\n        \"id\": \"1\",\n        \"type\": \"articles\",\n        \"attributes\": {\n            \"title\": \"Test article title 1\",\n            \"content\": \"Test article content 1\",\n            \"slug\": \"test-article-slug-1\"\n        }\n    }\n}\n```"
+							},
+							"response": []
+						}
+					],
+					"description": "## Creating a new article\n\n**Required Attributes:**\n\n- title   :string\n- content :text\n- slug    :string\n",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Article",
+					"item": [
+						{
+							"name": "Unauthorized",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "invalid",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/articles/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"1"
+									]
+								},
+								"description": "### No authorization provided\n\n#### Expected response:\n\n**403** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"403\",\n            \"source\": {\n                \"pointer\": \"/headers/authorization\"\n            },\n            \"title\": \"Not authorized\",\n            \"detail\": \"You have no right to access this resource.\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Invalid",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"content\": \"Test content\",\n\t\t\t\"title\": \"\",\n\t\t\t\"slug\": \"\"\n\t\t}\n\t}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/articles/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"1"
+									]
+								},
+								"description": "### Invalid Request\n\n#### Expected response:\n\n**422** HTTP status code with validation error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/title\"\n            },\n            \"detail\": \"can't be blank\"\n        },\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/slug\"\n            },\n            \"detail\": \"can't be blank\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Success",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"unique_article_id\", 1+Number(pm.environment.get(\"unique_article_id\")));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"content\": \"New article content {{unique_article_id}}\",\n\t\t\t\"title\": \"New article title {{unique_article_id}}\",\n\t\t\t\"slug\": \"new-article-slug-{{unique_article_id}}\"\n\t\t}\n\t}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/articles/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"1"
+									]
+								},
+								"description": "### Success\n\n#### Expected response:\n\n**204** HTTP status code with article details.\n\n```json\n{\n    \"data\": {\n        \"id\": \"1\",\n        \"type\": \"articles\",\n        \"attributes\": {\n            \"title\": \"New article title 7\",\n            \"content\": \"New article content 7\",\n            \"slug\": \"new-article-slug-7\"\n        }\n    }\n}\n```"
+							},
+							"response": []
+						}
+					],
+					"description": "## Updating an existing article\n\n**Required Attributes:**\n\n- title   :string\n- content :text\n- slug    :string\n",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete existing article",
+					"item": [
+						{
+							"name": "Unauthorized",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "invalid",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/articles/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"1"
+									]
+								},
+								"description": "### No authorization provided\n\n#### Expected response:\n\n**403** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"403\",\n            \"source\": {\n                \"pointer\": \"/headers/authorization\"\n            },\n            \"title\": \"Not authorized\",\n            \"detail\": \"You have no right to access this resource.\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Invalid",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{base_url}}/articles/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"1"
+									]
+								},
+								"description": "### Invalid Request\n\n#### Expected response:\n\n**204** HTTP status code with no content."
+							},
+							"response": []
+						}
+					],
+					"description": "## Deleting an existing article",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Collection",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"type": "text",
+								"value": ""
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/articles?page=1&per_page=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"articles"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Integer: Default value: 1. A number of requested page of articles."
+								},
+								{
+									"key": "per_page",
+									"value": "5",
+									"description": "Integer: Default Value: 20. A number of articles being reloaded at once."
+								}
+							]
+						},
+						"description": "### Get Articles Collection\n\nGet articles list with all attributes. Serwer returns an array of objects.\n\n#### Expected response:\n\n**201** HTTP status code with article collection and meta data.\n\n```json\n{\n    \"data\": [\n        {\n            \"id\": \"5\",\n            \"type\": \"articles\",\n            \"attributes\": {\n                \"title\": \"Test article title 2\",\n                \"content\": \"Test article content 2\",\n                \"slug\": \"test-article-slug-2\"\n            }\n        },\n        {\n            \"id\": \"4\",\n            \"type\": \"articles\",\n            \"attributes\": {\n                \"title\": \"Test article title 1111111\",\n                \"content\": \"Test article content 1111111\",\n                \"slug\": \"test-article-slug-1111111\"\n            }\n        }\n    ],\n    \"links\": {\n        \"self\": \"http://udemy-rails-api-course.herokuapp.com/articles?page%5Bnumber%5D=1&page%5Bsize%5D=5&per_page=5\",\n        \"first\": \"http://udemy-rails-api-course.herokuapp.com/articles?page%5Bnumber%5D=1&page%5Bsize%5D=5&per_page=5\",\n        \"prev\": null,\n        \"next\": \"http://udemy-rails-api-course.herokuapp.com/articles?page%5Bnumber%5D=2&page%5Bsize%5D=5&per_page=5\",\n        \"last\": \"http://udemy-rails-api-course.herokuapp.com/articles?page%5Bnumber%5D=2&page%5Bsize%5D=5&per_page=5\"\n    }\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Single Article",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/articles/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"articles",
+								"1"
+							]
+						},
+						"description": "### Get Single article object\n\nGet single article object with relationships and attributes data.\n\n#### Expected response:\n\n**201** HTTP status code with article object and meta data.\n\n```json\n{\n    \"data\": {\n        \"id\": \"1\",\n        \"type\": \"articles\",\n        \"attributes\": {\n            \"title\": \"Test title\",\n            \"content\": \"Test content\",\n            \"slug\": \"test-title\"\n        }\n    }\n}\n```"
+					},
+					"response": []
+				}
+			],
+			"description": "## Managing articles\n",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Create a comment",
+					"item": [
+						{
+							"name": "Unauthorized",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "invalid",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/articles/3/comments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"3",
+										"comments"
+									]
+								},
+								"description": "### No authorization provided\n\n#### Expected response:\n\n**403** HTTP status code with error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"status\": \"403\",\n            \"source\": {\n                \"pointer\": \"/headers/authorization\"\n            },\n            \"title\": \"Not authorized\",\n            \"detail\": \"You have no right to access this resource.\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Invalid",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"content\": \"\"\n\t\t}\n\t}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/articles/3/comments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"3",
+										"comments"
+									]
+								},
+								"description": "### Invalid Request\n\n#### Expected response:\n\n**422** HTTP status code with validation error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/content\"\n            },\n            \"detail\": \"can't be blank\"\n        }\n    ]\n}\n```"
+							},
+							"response": []
+						},
+						{
+							"name": "Success",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"unique_article_id\", 1+Number(pm.environment.get(\"unique_article_id\")));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"content\": \"Test comment\"\n\t\t}\n\t}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/articles/3/comments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"articles",
+										"3",
+										"comments"
+									]
+								},
+								"description": "### Success\n\n#### Expected response:\n\n**201** HTTP status code with comment details.\n\n```json\n{\n    \"data\": {\n        \"id\": \"1\",\n        \"type\": \"comments\",\n        \"attributes\": {\n            \"content\": \"Test comment\"\n        },\n        \"relationships\": {\n            \"article\": {\n                \"data\": {\n                    \"id\": \"3\",\n                    \"type\": \"articles\"\n                }\n            },\n            \"user\": {\n                \"data\": {\n                    \"id\": \"1\",\n                    \"type\": \"users\"\n                }\n            }\n        }\n    }\n}\n```"
+							},
+							"response": []
+						}
+					],
+					"description": "## Creating a new comment for an article\n\n**Required Attributes:**\n\n- content :text",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Article's comments",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"type": "text",
+								"value": ""
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/articles/3/comments?page=1&per_page=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"articles",
+								"3",
+								"comments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Integer: Default value: 1. A number of requested page of articles."
+								},
+								{
+									"key": "per_page",
+									"value": "5",
+									"description": "Integer: Default Value: 20. A number of articles being reloaded at once."
+								}
+							]
+						},
+						"description": "### Get Article's comments collection\n\nGet comments list for specific  article with all attributes. Serwer returns an array of objects.\n\n#### Expected response:\n\n**201** HTTP status code with comments collection and meta data.\n\n```json\n{\n    \"data\": [\n        {\n            \"id\": \"1\",\n            \"type\": \"comments\",\n            \"attributes\": {\n                \"content\": \"Test comment\"\n            },\n            \"relationships\": {\n                \"article\": {\n                    \"data\": {\n                        \"id\": \"3\",\n                        \"type\": \"articles\"\n                    }\n                },\n                \"user\": {\n                    \"data\": {\n                        \"id\": \"1\",\n                        \"type\": \"users\"\n                    }\n                }\n            }\n        }\n    ],\n    \"links\": {\n        \"self\": \"http://udemy-rails-api-course.herokuapp.com/articles/3/comments?page%5Bnumber%5D=1&page%5Bsize%5D=5&per_page=5\",\n        \"first\": \"http://udemy-rails-api-course.herokuapp.com/articles/3/comments?page%5Bnumber%5D=1&page%5Bsize%5D=5&per_page=5\",\n        \"prev\": null,\n        \"next\": null,\n        \"last\": \"http://udemy-rails-api-course.herokuapp.com/articles/3/comments?page%5Bnumber%5D=1&page%5Bsize%5D=5&per_page=5\"\n    }\n}\n```"
+					},
+					"response": []
+				}
+			],
+			"description": "## Managing articles\n",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Registrations",
+			"item": [
+				{
+					"name": "Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"unique_user_id\", 1+Number(pm.environment.get(\"unique_user_id\")));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"login\": \"jsmith{{unique_user_id}}\",\n\t\t\t\"password\": \"secret\"\n\t\t}\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sign_up",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sign_up"
+							]
+						},
+						"description": "### Success\n\n#### Expected response:\n\n**201** HTTP status code with user details.\n\n```json\n{\n    \"data\": {\n        \"id\": \"4\",\n        \"type\": \"users\",\n        \"attributes\": {\n            \"login\": \"jsmith5\",\n            \"avatar-url\": null,\n            \"url\": null,\n            \"name\": null\n        }\n    }\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"data\": {\n\t\t\"attributes\": {\n\t\t\t\"login\": \"\"\n\t\t}\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sign_up",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sign_up"
+							]
+						},
+						"description": "### Invalid Request\n\n#### Expected response:\n\n**422** HTTP status code with validation error details.\n\n```json\n{\n    \"errors\": [\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/login\"\n            },\n            \"detail\": \"can't be blank\"\n        },\n        {\n            \"source\": {\n                \"pointer\": \"/data/attributes/password\"\n            },\n            \"detail\": \"can't be blank\"\n        }\n    ]\n}\n```"
+					},
+					"response": []
+				}
+			],
+			"description": "## Creating a new user.\n\n**Required Attributes:**\n\n- login\n- password\n",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
