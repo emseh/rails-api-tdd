@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Articles', type: :request do
+RSpec.describe ArticlesController do
   describe '#index' do
     it 'returns a success response' do
       get '/articles'
