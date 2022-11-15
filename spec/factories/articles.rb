@@ -2,8 +2,8 @@
 
 FactoryBot.define do
   factory :article do
-    title { 'Sample article' }
-    content { 'Sample content' }
-    slug { 'sample-article' }
+    title { Faker::Book.title }
+    content { "#{title} Content" }
+    slug { title.gsub(' ', '-').downcase }
   end
 end

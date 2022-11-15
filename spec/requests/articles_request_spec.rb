@@ -18,7 +18,7 @@ RSpec.describe 'Articles', type: :request do
         data: [
           {
             id: article.id.to_s,
-            type: 'articles',
+            type: 'article',
             attributes: {
               title: article.title,
               content: article.content,

@@ -31,6 +31,7 @@ group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: %i[mri mingw x64_mingw]
   gem 'factory_bot_rails', '~> 6.1.0'
+  gem 'faker', '~> 3.0'
 end
 
 group :development do
@@ -45,6 +46,7 @@ gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 
 # Gem we has added
 gem 'awesome_print', '~> 1.9'
+gem 'jsom-pagination', '~> 0.1.2'
+gem 'jsonapi-serializer', '~> 2.1.0'
 gem 'rspec-rails', '~> 4.0.1'
 gem 'rubocop-rails', '~> 2.17'
-gem 'jsonapi-serializer', '~> 2.1.0'
