@@ -47,6 +47,7 @@ gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 # Gem we has added
 gem 'awesome_print', '~> 1.9'
 gem 'jsom-pagination', '~> 0.1.2'
+gem 'jsonapi_errors_handler', '~> 0.4.0'
 gem 'jsonapi-serializer', '~> 2.1.0'
 gem 'rspec-rails', '~> 4.0.1'
 gem 'rubocop-rails', '~> 2.17'
